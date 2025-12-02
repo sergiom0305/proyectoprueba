@@ -117,28 +117,61 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, createUserWithEmailAndPassword, sendEmailVerification, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // Configuración Global (Obligatoria para Canvas)
+        import { getAnalytics } from "firebase/analytics";
+        // --- CONFIGURACIÓN DE FIREBASE (PASO CRÍTICO) ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Inicialización de Firebase
+        // 1. CARGA DE CONFIGURACIÓN
+        // La configuración se intenta cargar automáticamente desde el entorno.
+        let firebaseConfig = {};
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        } catch (e) {
+            console.error("Error al parsear __firebase_config. Revisar el formato JSON.");
+        }
+
+        // 2. USO DE CONFIGURACIÓN MANUAL COMO FALLBACK (SI EL ENTORNO FALLA)
+        // ** SI SIGUE VIENDO EL ERROR, DESCOMENTE Y REEMPLACE ESTE BLOQUE: **
+      
+        const MANUAL_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCTsVrJCtI1OCPPs6Y5FgpLa04dp1y0AzA", 
+            authDomain: "controlinundacionesusers.firebaseapp.com",
+            projectId: "controlinundacionesusers",
+            storageBucket: "controlinundacionesusers.firebasestorage.app",
+            messagingSenderId: "293753111334",
+            appId: "1:293753111334:web:00ab34e8ae5b1a57f1b7e7",
+            measurementId: "G-1DYCQSPDYN"
+        };
+        // Reemplaza la configuración vacía si la manual tiene datos (y no son los placeholders)
+        if (Object.keys(firebaseConfig).length === 0 || firebaseConfig.apiKey === "placeholder") {
+            if (MANUAL_FIREBASE_CONFIG.apiKey && MANUAL_FIREBASE_CONFIG.apiKey !== "TU_API_KEY_AQUI_EJEMPLO_XYZ") {
+                 firebaseConfig = MANUAL_FIREBASE_CONFIG;
+                 console.warn("Usando la configuración de Firebase manual. ¡Asegúrate de que sea correcta!");
+            }
+        }
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        // --------------------------------------------------
+
+
         let app, db, auth;
 
-        if (Object.keys(firebaseConfig).length > 0) {
+        if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey && firebaseConfig.apiKey.length > 5) {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            setLogLevel('Debug'); // Útil para depuración
+            setLogLevel('Debug'); 
         } else {
             console.error("Firebase no está configurado. La aplicación no funcionará correctamente.");
         }
 
-        // Función para manejar la autenticación inicial (obligatoria)
         async function authenticateUser() {
             try {
-                // Usar token personalizado si está disponible, sino, autenticación anónima.
+                if (!auth) return; 
+                
                 await setPersistence(auth, browserSessionPersistence);
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
@@ -151,7 +184,6 @@
             }
         }
 
-        // --- Lógica del Formulario de Registro ---
 
         const formRegistro = document.getElementById('form-registro');
         const mensajeDiv = document.getElementById('mensaje');
@@ -169,11 +201,10 @@
             const password = document.getElementById('password').value;
 
             if (!auth) {
-                mostrarMensaje("Error: Firebase Auth no está inicializado.", 'error');
+                mostrarMensaje("Error: La configuración de Firebase no se ha cargado correctamente. Asegúrate de pegar tus credenciales de Firebase en el código.", 'error');
                 return;
             }
 
-            // Deshabilitar botón mientras se procesa para evitar doble clic
             const btnRegistrar = document.getElementById('btn-registrar');
             btnRegistrar.disabled = true;
             btnRegistrar.textContent = 'Procesando...';
@@ -181,17 +212,12 @@
             mostrarMensaje("Registrando usuario...", 'info');
             
             try {
-                // 1. Crear el usuario con correo y contraseña
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
                 
-                // 2. ENVIAR EL CORREO ELECTRÓNICO DE VERIFICACIÓN (¡Esta es la función clave!)
-                // Firebase gestiona el envío del correo de forma segura.
                 await sendEmailVerification(user);
 
-                // 3. Guardar información adicional del usuario en Firestore (opcional)
                 const userId = user.uid;
-                // La ruta sigue la convención: /artifacts/{appId}/users/{userId}/userData/profile
                 const userDocRef = doc(db, "artifacts", appId, "users", userId, "userData", "profile");
                 
                 await setDoc(userDocRef, {
@@ -199,10 +225,8 @@
                     registeredAt: new Date().toISOString(),
                 });
 
-                // 4. Mostrar mensaje de éxito
                 mostrarMensaje(`¡Registro exitoso! Se ha enviado un correo de verificación a ${email}. Por favor, revisa tu bandeja de entrada.`, 'exito');
                 
-                // Limpiar el formulario y reestablecer botón
                 formRegistro.reset();
                 btnRegistrar.disabled = false;
                 btnRegistrar.textContent = 'Registrarse';
@@ -212,7 +236,6 @@
                 console.error("Error durante el registro o envío de correo:", error);
                 let errorMessage = "Ocurrió un error desconocido durante el registro.";
                 
-                // Manejo de errores comunes de Firebase Auth
                 switch (error.code) {
                     case 'auth/email-already-in-use':
                         errorMessage = 'Ese correo electrónico ya está registrado.';
@@ -222,6 +245,9 @@
                         break;
                     case 'auth/weak-password':
                         errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        errorMessage = 'Error: La autenticación por Email/Contraseña NO está habilitada en tu proyecto de Firebase.';
                         break;
                     default:
                         errorMessage = `Error: ${error.message}`;
@@ -233,13 +259,14 @@
             }
         }
 
-        // Asignar el evento al enviar el formulario
         formRegistro.addEventListener('submit', handleRegistration);
 
-        // Asegurarse de que Firebase esté autenticado antes de permitir interacciones
-        authenticateUser();
+        if (auth) {
+            authenticateUser();
+        }
 
     </script>
 </body>
 </html>
+
 
