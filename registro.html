@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuario | GlobalTech</title>
+    <!-- Incluye tu archivo CSS principal si es necesario -->
+    <link rel="stylesheet" href="control/src/css/styles.css"> 
+    <style>
+        /* Estilos CSS */
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .registro-contenedor {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba (0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-grupo {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .mensaje-estado {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: none; 
+            text-align: left;
+        }
+        .mensaje-exito {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .mensaje-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .enlace-volver {
+            display: block;
+            margin-top: 20px;
+            color: #2196F3;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="registro-contenedor">
+        <h2>Registro de Nuevo Usuario</h2>
+        <form id="form-registro">
+            <div class="form-grupo">
+                <label for="email">Correo Electrónico:</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-grupo">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" required minlength="6">
+            </div>
+            <button type="submit" id="btn-registrar">Registrarse</button>
+        </form>
+
+        <div id="mensaje" class="mensaje-estado"></div>
+
+        <a href="index.html" class="enlace-volver">Volver a la página principal</a>
+    </div>
+
+    <!-- Lógica de Firebase -->
+    <script type="module">
+        // --- 1. IMPORTACIONES DE FIREBASE (Versión estable 11.6.1) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, createUserWithEmailAndPassword, sendEmailVerification, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Ya no necesitamos getAnalytics aquí si no lo usas.
+
+        // --- 2. CONFIGURACIÓN FIREBASE (PEGA AQUÍ TUS CREDENCIALES NUEVAS) ---
+        const firebaseConfig = {
+            // Utiliza tus credenciales del proyecto más reciente que creaste:
+            apiKey: "AIzaSyCTsVrJCtI1OCPPs6Y5FgpLa04dp1y0AzA",
+            authDomain: "controlinundacionesusers.firebaseapp.com",
+            projectId: "controlinundacionesusers",
+            storageBucket: "controlinundacionesusers.firebasestorage.app",
+            messagingSenderId: "293753111334",
+            appId: "1:293753111334:web:bb30c373a3a47b9df1b7e7",
+            measurementId: "G-Q1CLNGZCC2"
+        };
+
+        // Variables de entorno de Canvas
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Inicialización
+        let app, db, auth;
+
+        // Inicialización unificada y limpia
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 5) {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app); // Ahora db existe
+                auth = getAuth(app);    // Ahora auth existe
+                setLogLevel('Debug');
+                console.log("🟢 Firebase: Servicios inicializados (Auth y Firestore).");
+                authenticateUser();
+            } catch (initError) {
+                console.error("🔴 Firebase: Falló la inicialización de la app (Revisa la Configuración).", initError);
+            }
+        } else {
+            console.error("🔴 Firebase: ¡ATENCIÓN! La clave API no es válida.");
+        }
+
+        // Función de Autenticación del entorno (necesaria para Canvas)
+        async function authenticateUser() {
+            try {
+                if (!auth) return;
+                await setPersistence(auth, browserSessionPersistence);
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                console.log("🟢 Firebase: Autenticación inicial del entorno completada.");
+            } catch (error) {
+                console.error("🔴 Firebase: Error en la autenticación inicial:", error);
+            }
+        }
+
+        // --- Lógica de la Interfaz de Usuario ---
+
+        const formRegistro = document.getElementById('form-registro');
+        const mensajeDiv = document.getElementById('mensaje');
+
+        function mostrarMensaje(texto, tipo = 'exito') {
+            mensajeDiv.innerHTML = texto;
+            mensajeDiv.className = `mensaje-estado ${tipo === 'exito' ? 'mensaje-exito' : 'mensaje-error'}`;
+            mensajeDiv.style.display = 'block';
+        }
+
+        async function handleRegistration(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!auth || !db) {
+                mostrarMensaje("🔴 Error: Firebase no está disponible. Revisa la Consola para ver el error de inicialización.", 'error');
+                return;
+            }
+
+            const btnRegistrar = document.getElementById('btn-registrar');
+            btnRegistrar.disabled = true;
+            btnRegistrar.textContent = 'Procesando...';
+            mostrarMensaje("Registrando usuario...", 'exito'); 
+            
+            let user = null;
+
+            try {
+                // PASO 1: CREAR USUARIO EN FIREBASE AUTH
+                console.log("➡️ Paso 1: Creando usuario en Auth...");
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                user = userCredential.user;
+                console.log(`✅ Paso 1 Exitoso: Usuario creado: ${user.uid}`);
+
+                // PASO 2: ENVIAR CORREO DE VERIFICACIÓN
+                try {
+                    console.log("➡️ Paso 2: Enviando correo de verificación...");
+                    await sendEmailVerification(user);
+                    console.log(`✅ Paso 2 Exitoso: Solicitud de correo enviada a ${email}.`);
+                } catch (emailError) {
+                    console.error("❌ Paso 2 FALLÓ: Error al enviar el correo.", emailError);
+                    mostrarMensaje(`Registro exitoso, pero <br> **FALLÓ el envío de correo de verificación.** <br> Revisa la Consola y la plantilla en Firebase.`, 'error');
+                    btnRegistrar.disabled = false;
+                    btnRegistrar.textContent = 'Registrarse';
+                    return; 
+                }
+
+                // PASO 3: GUARDAR DATOS EN FIRESTORE
+                try {
+                    console.log("➡️ Paso 3: Guardando datos en Firestore...");
+                    const userId = user.uid;
+                    const userDocRef = doc(db, "artifacts", appId, "users", userId, "userData", "profile");
+                    
+                    await setDoc(userDocRef, {
+                        email: user.email,
+                        registeredAt: new Date().toISOString(),
+                    });
+                    console.log("✅ Paso 3 Exitoso: Datos guardados.");
+                } catch (firestoreError) {
+                    console.error("❌ Paso 3 FALLÓ: Error al guardar datos en Firestore.", firestoreError);
+                    mostrarMensaje(`Registro exitoso, pero <br> **FALLÓ al guardar datos en Firestore.** <br> **CRÍTICO: Revisa tus Reglas de Seguridad de Firestore.**`, 'error');
+                    btnRegistrar.disabled = false;
+                    btnRegistrar.textContent = 'Registrarse';
+                    return; 
+                }
+
+
+                // PASO 4: ÉXITO TOTAL
+                mostrarMensaje(`🥳 **¡Registro exitoso!** Se ha enviado un correo de verificación a **${email}**. Por favor, revisa tu bandeja de entrada o spam.`, 'exito');
+                
+                formRegistro.reset();
+                btnRegistrar.disabled = false;
+                btnRegistrar.textContent = 'Registrarse';
+
+
+            } catch (error) {
+                // Captura errores de Auth (Paso 1)
+                console.error("❌ Proceso de Registro FALLÓ (Auth):", error);
+                let errorMessage = "Ocurrió un error desconocido. Revisa la Consola del navegador.";
+                
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'Ese correo electrónico ya está registrado.';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        errorMessage = 'Error: **La Autenticación por Email/Contraseña NO está habilitada en tu proyecto de Firebase.**';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
+                        break;
+                    default:
+                        errorMessage = `Error: ${error.message}`;
+                }
+
+                mostrarMensaje(`🔴 ${errorMessage}`, 'error');
+                btnRegistrar.disabled = false;
+                btnRegistrar.textContent = 'Registrarse';
+            }
+        }
+
+        formRegistro.addEventListener('submit', handleRegistration);
+
+    </script>
+</body>
+</html>
+
+
+
+
+
