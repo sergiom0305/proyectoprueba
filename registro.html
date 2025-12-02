@@ -1,182 +1,143 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Usuario</title>
-    <!-- Incluye Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Registro de Usuario | GlobalTech</title>
+    <!-- Asegúrate de que esta ruta de CSS sea correcta -->
+    <link rel="stylesheet" href="control/src/css/styles.css"> 
+    <link rel="icon" href="control/public/assets/images/logo.png" type="image/png">
+    
+    <!-- Estilos locales para el formulario -->
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #e2e8f0; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 20px;
+        }
+        .registro-container {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        .registro-container h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            border-color: #3f51b5;
+            outline: none;
+        }
+        .btn-register {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50; /* Verde vibrante */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .btn-register:hover {
+            background-color: #45a049;
+            transform: translateY(-1px);
+        }
+        .link-volver {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #3f51b5;
+            text-decoration: none;
+        }
+        .link-volver:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-
-    <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Crear Cuenta</h1>
-        
-        <form id="registration-form" method="POST">
+<body>
+    <div class="registro-container">
+        <h2>Crear Cuenta</h2>
+        <form action="/submit-registration" method="POST">
             
-            <!-- Campo Email -->
-            <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-                <input type="email" id="email" name="email" required 
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
-                       placeholder="tu.correo@ejemplo.com">
+            <div class="input-group">
+                <label for="reg-nombre">Nombre Completo:</label>
+                <input type="text" id="reg-nombre" name="nombre" placeholder="Ej: Juan Pérez" required>
             </div>
-
-            <!-- Campo Username -->
-            <div class="mb-4">
-                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Nombre de Usuario</label>
-                <input type="text" id="username" name="username" required 
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
-                       placeholder="ej: usuario_monitor">
+            
+            <div class="input-group">
+                <label for="reg-email">Correo Electrónico:</label>
+                <input type="email" id="reg-email" name="email" placeholder="ejemplo@correo.com" required>
             </div>
-
-            <!-- Campo Contraseña -->
-            <div class="mb-6">
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                <input type="password" id="password" name="password" required 
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
-                       placeholder="Mínimo 8 caracteres">
+            
+            <div class="input-group">
+                <label for="reg-username">Nombre de Usuario:</label>
+                <input type="text" id="reg-username" name="username" placeholder="TuNombreDeUsuario" required>
             </div>
-
-            <!-- Botón de Envío -->
-            <button type="submit" 
-                    class="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
-                Registrarse y Enviar OTP
-            </button>
+            
+            <div class="input-group">
+                <label for="reg-password">Contraseña:</label>
+                <input type="password" id="reg-password" name="password" placeholder="Mínimo 8 caracteres" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="reg-password-confirm">Confirmar Contraseña:</label>
+                <input type="password" id="reg-password-confirm" name="password_confirm" required>
+            </div>
+            
+            <button type="submit" class="btn-register">Registrarse</button>
         </form>
         
-        <p class="text-center text-sm text-gray-600 mt-6">
-            ¿Ya tienes una cuenta? 
-            <a th:href="@{/login}" class="text-blue-600 hover:text-blue-800 font-medium">Inicia Sesión aquí</a>
-        </p>
-        
-        <!-- Mensajes de Feedback (Usados por JavaScript) -->
-        <div id="message-area" class="mt-4 p-3 rounded-lg text-sm hidden"></div>
+        <a href="index.html" class="link-volver">Volver a la página principal</a>
     </div>
 
-    <!-- SCRIPT PARA MANEJAR EL ENVÍO DEL FORMULARIO Y LA VERIFICACIÓN DE OTP -->
     <script>
-        document.getElementById('registration-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const form = event.target;
-            const messageArea = document.getElementById('message-area');
-            messageArea.classList.add('hidden');
-            messageArea.innerHTML = '';
+        // Función de ejemplo para manejar el envío del formulario.
+        // En una aplicación real, esta función enviaría datos a un servidor.
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Lógica de validación o envío de datos simulada
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-password-confirm').value;
 
-            const userData = {
-                email: form.email.value,
-                username: form.username.value,
-                password: form.password.value
-            };
-
-            // 1. Envía los datos de registro
-            try {
-                const response = await fetch('/api/sensores/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(userData)
-                });
-
-                const message = await response.text();
-
-                if (response.ok) {
-                    showMessage('success', message + ". Por favor, ingresa el código OTP que recibiste.");
-                    // Muestra el formulario para ingresar el código OTP
-                    showOtpForm(userData.email);
-                } else {
-                    showMessage('error', "Error: " + message);
-                }
-            } catch (error) {
-                showMessage('error', "No se pudo conectar con el servidor.");
+            if (password !== confirm) {
+                // Sustituir con un mensaje en la interfaz
+                alert('Las contraseñas no coinciden. Por favor, revíselas.');
+                return;
             }
+            
+            // Si todo está bien, se simula el registro.
+            // Aquí deberías hacer la llamada a tu API o backend.
+            alert('Registro exitoso (Simulado). Redireccionando...');
+            // window.location.href = 'index.html';
         });
-
-        function showMessage(type, message) {
-            const messageArea = document.getElementById('message-area');
-            messageArea.innerHTML = message;
-            messageArea.classList.remove('hidden', 'bg-red-100', 'bg-green-100');
-            messageArea.classList.add(type === 'success' ? 'bg-green-100' : 'bg-red-100');
-            messageArea.classList.add(type === 'success' ? 'text-green-800' : 'text-red-800');
-        }
-
-        function showOtpForm(email) {
-            const formContainer = document.getElementById('registration-form').parentElement;
-            
-            // Reemplaza el formulario de registro con el formulario de OTP
-            formContainer.innerHTML = `
-                <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Verificación de Cuenta</h1>
-                <p class="text-center text-gray-600 mb-4">Ingresa el código de 6 dígitos enviado a <strong>${email}</strong>.</p>
-
-                <form id="otp-form" class="mt-4">
-                    <div class="mb-6">
-                        <label for="otp" class="block text-sm font-medium text-gray-700 mb-1">Código OTP</label>
-                        <input type="text" id="otp" name="otp" required maxlength="6"
-                               class="w-full px-4 py-2 text-center text-2xl border-2 border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" 
-                               placeholder="123456">
-                    </div>
-                    
-                    <input type="hidden" id="otp-email" value="${email}">
-                    
-                    <button type="submit" 
-                            class="w-full bg-green-600 text-white font-bold py-2.5 rounded-lg hover:bg-green-700 transition duration-150 shadow-md">
-                        Verificar Código
-                    </button>
-                </form>
-
-                <div id="otp-message-area" class="mt-4 p-3 rounded-lg text-sm hidden"></div>
-            `;
-            
-            // Asigna el listener al nuevo formulario
-            document.getElementById('otp-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const otpForm = e.target;
-                const otpMessageArea = document.getElementById('otp-message-area');
-                otpMessageArea.classList.add('hidden');
-                otpMessageArea.innerHTML = '';
-                
-                const enteredOtp = otpForm.otp.value;
-                const userEmail = otpForm['otp-email'].value;
-
-                // 2. Envía el código OTP para verificación
-                try {
-                    // FIX: Se corrigió el uso incorrecto de template literals (se eliminaron los escapes con \)
-                    const verifyResponse = await fetch(`/api/sensores/verify?email=${userEmail}&otp=${enteredOtp}`, {
-                        method: 'POST'
-                    });
-
-                    const verifyMessage = await verifyResponse.text();
-                    
-                    if (verifyResponse.ok) {
-                        // Verificación exitosa
-                        otpMessageArea.innerHTML = verifyMessage + ". Serás redirigido al inicio de sesión.";
-                        otpMessageArea.classList.remove('hidden', 'bg-red-100');
-                        otpMessageArea.classList.add('bg-green-100', 'text-green-800');
-                        
-                        // Redirigir al login después de 3 segundos
-                        setTimeout(() => {
-                            window.location.href = '/login'; 
-                        }, 3000);
-
-                    } else {
-                        // Error en el código OTP
-                        otpMessageArea.innerHTML = "Error: " + verifyMessage;
-                        otpMessageArea.classList.remove('hidden', 'bg-green-100');
-                        otpMessageArea.classList.add('bg-red-100', 'text-red-800');
-                    }
-                } catch (error) {
-                    otpMessageArea.innerHTML = "No se pudo conectar con el servidor de verificación.";
-                    otpMessageArea.classList.remove('hidden', 'bg-green-100');
-                    otpMessageArea.classList.add('bg-red-100', 'text-red-800');
-                }
-            });
-
-            document.getElementById('message-area').classList.add('hidden');
-        }
     </script>
 </body>
 </html>
