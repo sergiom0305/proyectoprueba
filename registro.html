@@ -113,28 +113,6 @@
 
     <!-- Importaciones de Firebase -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, createUserWithEmailAndPassword, sendEmailVerification, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAnalytics } from "firebase/analytics";
-        // --- CONFIGURACIÓN DE FIREBASE (PASO CRÍTICO) ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // 1. CARGA DE CONFIGURACIÓN
-        // La configuración se intenta cargar automáticamente desde el entorno.
-        let firebaseConfig = {};
-        try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        } catch (e) {
-            console.error("Error al parsear __firebase_config. Revisar el formato JSON.");
-        }
-
-        // 2. USO DE CONFIGURACIÓN MANUAL COMO FALLBACK (SI EL ENTORNO FALLA)
-        // ** SI SIGUE VIENDO EL ERROR, DESCOMENTE Y REEMPLACE ESTE BLOQUE: **
-      
-        <script type="module">
   // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
@@ -149,16 +127,13 @@
     projectId: "controlinundacionesusers",
     storageBucket: "controlinundacionesusers.firebasestorage.app",
     messagingSenderId: "293753111334",
-    appId: "1:293753111334:web:594a84118ad2bfabf1b7e7",
-    measurementId: "G-9FX6QNB5K7"
+    appId: "1:293753111334:web:bb30c373a3a47b9df1b7e7",
+    measurementId: "G-Q1CLNGZCC2"
   };
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
-
-        // --------------------------------------------------
-
 
         let app, db, auth;
 
@@ -271,6 +246,7 @@
     </script>
 </body>
 </html>
+
 
 
 
