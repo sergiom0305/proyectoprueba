@@ -134,26 +134,29 @@
         // 2. USO DE CONFIGURACIÓN MANUAL COMO FALLBACK (SI EL ENTORNO FALLA)
         // ** SI SIGUE VIENDO EL ERROR, DESCOMENTE Y REEMPLACE ESTE BLOQUE: **
       
-        const MANUAL_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyCTsVrJCtI1OCPPs6Y5FgpLa04dp1y0AzA", 
-            authDomain: "controlinundacionesusers.firebaseapp.com",
-            projectId: "controlinundacionesusers",
-            storageBucket: "controlinundacionesusers.firebasestorage.app",
-            messagingSenderId: "293753111334",
-            appId: "1:293753111334:web:00ab34e8ae5b1a57f1b7e7",
-            measurementId: "G-1DYCQSPDYN"
-        };
-        // Reemplaza la configuración vacía si la manual tiene datos (y no son los placeholders)
-        if (Object.keys(firebaseConfig).length === 0 || firebaseConfig.apiKey === "placeholder") {
-            if (MANUAL_FIREBASE_CONFIG.apiKey && MANUAL_FIREBASE_CONFIG.apiKey !== "TU_API_KEY_AQUI_EJEMPLO_XYZ") {
-                 firebaseConfig = MANUAL_FIREBASE_CONFIG;
-                 console.warn("Usando la configuración de Firebase manual. ¡Asegúrate de que sea correcta!");
-            }
-        }
+        <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCTsVrJCtI1OCPPs6Y5FgpLa04dp1y0AzA",
+    authDomain: "controlinundacionesusers.firebaseapp.com",
+    projectId: "controlinundacionesusers",
+    storageBucket: "controlinundacionesusers.firebasestorage.app",
+    messagingSenderId: "293753111334",
+    appId: "1:293753111334:web:594a84118ad2bfabf1b7e7",
+    measurementId: "G-9FX6QNB5K7"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+
         // --------------------------------------------------
 
 
@@ -268,5 +271,6 @@
     </script>
 </body>
 </html>
+
 
 
