@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | GlobalTech</title>
+    <!-- Incluye tu archivo CSS principal si es necesario -->
+    <link rel="stylesheet" href="control/src/css/styles.css"> 
+    <style>
+        /* Estilos CSS (Reutilizados de Registro) */
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .login-contenedor {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-grupo {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        /* ESTILO DEL BOTÓN AZUL */
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2196F3; /* Azul primario */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #1976D2; /* Azul más oscuro para hover */
+        }
+        .mensaje-estado {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: none; 
+            text-align: left;
+        }
+        .mensaje-exito {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .mensaje-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .enlaces-adicionales {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .enlaces-adicionales a {
+            color: #555;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+        }
+        .enlaces-adicionales a:hover {
+            color: #2196F3;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-contenedor">
+        <h2>Inicio de Sesión</h2>
+        <form id="form-login">
+            <div class="form-grupo">
+                <label for="email">Correo Electrónico:</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-grupo">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" id="btn-login">Acceder</button>
+        </form>
+
+        <div id="mensaje" class="mensaje-estado"></div>
+
+        <div class="enlaces-adicionales">
+            <a href="registro.html">¿No tienes cuenta? Regístrate aquí</a>
+            <a href="index.html">Volver a la página principal</a>
+        </div>
+    </div>
+
+    <!-- Lógica de Firebase para Iniciar Sesión -->
+    <script type="module">
+        // --- 1. IMPORTACIONES DE FIREBASE (Versión estable 11.6.1) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+
+        // --- 2. CONFIGURACIÓN FIREBASE (REUTILIZADA DEL REGISTRO) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTsVrJCtI1OCPPs6Y5FgpLa04dp1y0AzA",
+            authDomain: "controlinundacionesusers.firebaseapp.com",
+            projectId: "controlinundacionesusers",
+            storageBucket: "controlinundacionesusers.firebasestorage.app",
+            messagingSenderId: "293753111334",
+            appId: "1:293753111334:web:bb30c373a3a47b9df1b7e7",
+            measurementId: "G-Q1CLNGZCC2"
+        };
+
+        // Variables de entorno de Canvas
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Inicialización
+        let app, auth;
+
+        // Inicialización unificada y limpia
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 5) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);    
+                setLogLevel('Debug');
+                console.log("Firebase: Servicios de Autenticación inicializados.");
+                authenticateUser();
+            } catch (initError) {
+                console.error("Firebase: Falló la inicialización de la app (Revisa la Configuración).", initError);
+            }
+        } else {
+            console.error("Firebase: ¡ATENCIÓN! La clave API no es válida.");
+        }
+
+        // Función de Autenticación del entorno (necesaria para Canvas)
+        async function authenticateUser() {
+            try {
+                if (!auth) return;
+                await setPersistence(auth, browserSessionPersistence);
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                console.log("Firebase: Autenticación inicial del entorno completada (usuario anónimo o token).");
+            } catch (error) {
+                console.error("Firebase: Error en la autenticación inicial:", error);
+            }
+        }
+
+        // --- Lógica de la Interfaz de Usuario ---
+
+        const formLogin = document.getElementById('form-login');
+        const mensajeDiv = document.getElementById('mensaje');
+
+        function mostrarMensaje(texto, tipo = 'exito') {
+            mensajeDiv.innerHTML = texto;
+            mensajeDiv.className = `mensaje-estado ${tipo === 'exito' ? 'mensaje-exito' : 'mensaje-error'}`;
+            mensajeDiv.style.display = 'block';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!auth) {
+                mostrarMensaje("Error: Firebase no está disponible.", 'error');
+                return;
+            }
+
+            const btnLogin = document.getElementById('btn-login');
+            btnLogin.disabled = true;
+            btnLogin.textContent = 'Verificando...';
+            mostrarMensaje("Iniciando sesión...", 'exito'); 
+            
+            try {
+                // PASO 1: INTENTAR INICIAR SESIÓN CON CORREO Y CONTRASEÑA
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                if (!user.emailVerified) {
+                    // Si el correo no está verificado, cerramos la sesión temporal y avisamos
+                    await auth.signOut();
+                    mostrarMensaje(`**Correo no verificado.** Revisa la bandeja de entrada de ${email} o spam.`, 'error');
+                    
+                    // Opcional: Reenviar verificación (deberías tener un botón para esto en un app real)
+                    // await sendEmailVerification(user); 
+
+                    btnLogin.disabled = false;
+                    btnLogin.textContent = 'Acceder';
+                    return; 
+                }
+
+                // PASO 2: ÉXITO - REDIRECCIÓN
+                console.log(`✅ Sesión iniciada con éxito por: ${user.email}`);
+                mostrarMensaje(`🥳 **¡Bienvenido! Sesión iniciada.** Redireccionando...`, 'exito');
+                
+                // Redirigir al usuario al área principal (por ejemplo, index.html)
+                setTimeout(() => {
+                    window.location.href = "index.html"; 
+                }, 1500);
+
+
+            } catch (error) {
+                // Captura errores de Auth
+                console.error("Falló el inicio de sesión (Auth):", error);
+                let errorMessage = "Ocurrió un error desconocido. Revisa la Consola del navegador.";
+                
+                switch (error.code) {
+                    case 'auth/invalid-credential':
+                    case 'auth/user-not-found': // En Firebase, esto se mapea a invalid-credential por seguridad
+                    case 'auth/wrong-password': // En Firebase, esto se mapea a invalid-credential por seguridad
+                        errorMessage = 'Credenciales inválidas. Revisa tu correo o contraseña.';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Acceso bloqueado temporalmente debido a demasiados intentos fallidos.';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = 'Esta cuenta de usuario ha sido deshabilitada.';
+                        break;
+                    default:
+                        errorMessage = `Error: ${error.message}`;
+                }
+
+                mostrarMensaje(`🔴 ${errorMessage}`, 'error');
+                btnLogin.disabled = false;
+                btnLogin.textContent = 'Acceder';
+            }
+        }
+
+        formLogin.addEventListener('submit', handleLogin);
+
+    </script>
+</body>
+</html>
