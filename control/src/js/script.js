@@ -1,7 +1,7 @@
 // ====================================
 // Configuración API
 // ====================================
-const API_URL = 'devoted-prosperity-production-a47b.up.railway.app/api/sensores';
+const API_URL = 'http://devoted-prosperity-production-a47b.up.railway.app/api/sensores';
 
 // ====================================
 // Gestión de datos desde API
