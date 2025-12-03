@@ -1,10 +1,6 @@
-// ====================================
-// Configuración API
-// ====================================
+
 const API_URL = 'http://localhost:8080/api/sensores';
-// ====================================
-// Gestión de datos desde API
-// ====================================
+
 class BaseDatosSensores {
   constructor() {
     this.sensores = [];
