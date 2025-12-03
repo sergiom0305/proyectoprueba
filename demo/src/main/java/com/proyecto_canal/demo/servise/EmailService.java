@@ -1,75 +1,113 @@
-package com.proyecto_canal.demo.servise;
+package com.proyecto_canal.demo.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
-/**
- * Servicio para el manejo de envío de correos electrónicos, 
- * incluyendo códigos de verificación (OTP).
- */
 @Service
 public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
-    
+
+    // El correo del administrador que recibe las ALARMAS. ¡REEMPLAZAR!
+    private static final String ADMIN_EMAIL = "admin.globaltech@tuempresa.com"; 
     // El correo desde donde se envían los mensajes (debe coincidir con spring.mail.username)
-    private static final String SENDER_EMAIL = "sergiomontiel0305@gmail.com"; 
+    private static final String SENDER_EMAIL = "tu_correo@gmail.com"; 
+
+    // Clase interna para guardar el OTP y su fecha de expiración
+    private static class OtpEntry {
+        final String otp;
+        final LocalDateTime expiryTime;
+
+        OtpEntry(String otp, LocalDateTime expiryTime) {
+            this.otp = otp;
+            this.expiryTime = expiryTime;
+        }
+
+        boolean isExpired() {
+            return LocalDateTime.now().isAfter(expiryTime);
+        }
+    }
+
+    // Almacenamiento temporal para los OTPs (email -> OtpEntry)
+    private final Map<String, OtpEntry> otpStorage = new HashMap<>();
 
     /**
      * Genera un código OTP de 6 dígitos.
-     * @return El código OTP como String.
      */
-    public String generateOtp() {
-        SecureRandom random = new SecureRandom();
-        int number = 100000 + random.nextInt(900000); // Genera número entre 100000 y 999999
-        return String.valueOf(number);
+    private String generateOtp() {
+        Random random = new Random();
+        int otp = 100000 + random.nextInt(900000);
+        return String.valueOf(otp);
     }
 
     /**
-     * Método genérico para enviar un correo simple.
-     * @param to Dirección de destino.
-     * @param subject Asunto del correo.
-     * @param text Cuerpo del mensaje.
+     * Envía un correo electrónico con un código OTP que dura 30 minutos.
+     * @param toEmail La dirección de correo del destinatario.
      */
-    public void sendEmail(String to, String subject, String text) {
+    public void sendOtp(String toEmail) {
+        String otp = generateOtp();
+        
+        // Define el tiempo de expiración: 30 minutos a partir de ahora
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(30);
+        
+        // Guarda el OTP y su tiempo de expiración en el almacenamiento
+        otpStorage.put(toEmail, new OtpEntry(otp, expiryTime)); 
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(SENDER_EMAIL); 
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
+        message.setTo(toEmail);
+        message.setSubject("Código de Verificación Temporal");
+        message.setText("Tu Código de Verificación es: " + otp + 
+                        "\nEste código expirará el: " + expiryTime + 
+                        "\nTiene 30 minutos para usarlo.");
         
         try {
             mailSender.send(message);
-            System.out.println("✅ Correo enviado a: " + to + " con asunto: " + subject);
         } catch (Exception e) {
-            System.err.println("❌ ERROR al enviar correo a " + to + ": " + e.getMessage());
-            throw new RuntimeException("Fallo al enviar correo electrónico. Verifique la configuración y credenciales de Spring Mail.");
+            throw new RuntimeException("Error al enviar el correo. Revise la configuración SMTP: " + e.getMessage());
         }
     }
 
     /**
-     * Envía un correo de verificación con un código OTP.
-     * @param to Correo del usuario a verificar.
-     * @param otp Código de verificación.
+     * Verifica si el OTP es correcto y no ha expirado para un email dado.
      */
-    public void sendVerificationEmail(String to, String otp) {
-        String subject = "Código de Verificación - GlobalTech";
-        String body = String.format(
-            "Gracias por registrarte en GlobalTech.\n\n" +
-            "Tu código de verificación es: %s\n\n" +
-            "Este código expira en 5 minutos. Por favor, ingrésalo en la página de registro para activar tu cuenta.\n\n" +
-            "Saludos,\nEl equipo de GlobalTech",
-            otp
-        );
-        sendEmail(to, subject, body);
-    }
+    public boolean verifyOtp(String email, String otp) {
+        OtpEntry entry = otpStorage.get(email);
+        
+        if (entry == null) {
+            return false; // No hay OTP registrado para ese email
+        }
 
-        public void sendHighAlertEmail(String sensorId, Integer nivelCm) {
+        if (entry.isExpired()) {
+            otpStorage.remove(email); // Limpia OTP expirado
+            return false; // El OTP ha expirado
+        }
+        
+        // Compara el OTP ingresado con el almacenado
+        return otp.equals(entry.otp);
+    }
+    
+    /**
+     * Elimina el OTP después de la verificación (o si se desea limpiarlo).
+     */
+    public void clearOtp(String email) {
+        otpStorage.remove(email);
+    }
+    
+    /**
+     * Envía un correo de ALERTA CRÍTICA al administrador.
+     * @param sensorId ID del sensor que generó la alerta.
+     * @param nivelCm Nivel de agua registrado.
+     */
+    public void sendHighAlertEmail(String sensorId, Integer nivelCm) {
         String subject = String.format("🚨 ALERTA CRÍTICA: Desbordamiento Potencial en Sensor %s", sensorId);
         String body = String.format(
             "¡ATENCIÓN ADMINISTRADOR!\n\n" +
@@ -81,10 +119,21 @@ public class EmailService {
             "Sistema de Monitoreo GlobalTech",
             sensorId,
             nivelCm,
-            java.time.LocalDateTime.now()
+            LocalDateTime.now()
         );
         
-        // El correo se envía al administrador
-        sendEmail(ADMIN_EMAIL, subject, body);
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(SENDER_EMAIL); 
+        message.setTo(ADMIN_EMAIL);
+        message.setSubject(subject);
+        message.setText(body);
+        
+        try {
+            mailSender.send(message);
+            System.out.println("✅ ALERTA: Correo enviado a: " + ADMIN_EMAIL + " con asunto: " + subject);
+        } catch (Exception e) {
+            System.err.println("❌ ERROR al enviar correo de ALERTA a " + ADMIN_EMAIL + ": " + e.getMessage());
+            // En un ambiente de producción, podrías querer registrar el error
+        }
     }
 }
