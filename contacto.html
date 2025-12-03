@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacto PQRSS | GlobalTech</title>
+    <!-- Usa Tailwind CSS para un diseño moderno y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="w-full max-w-xl bg-white p-8 md:p-10 rounded-xl shadow-2xl">
+        <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Contáctanos (PQRSS)</h2>
+        <p class="text-center text-gray-500 mb-8">Envíanos tus Peticiones, Quejas, Reclamos, Sugerencias o Solicitudes. Te responderemos lo antes posible.</p>
+
+        <form id="form-contacto" class="space-y-6">
+            <!-- Campo Nombre Completo -->
+            <div>
+                <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                <input type="text" id="nombre" required placeholder="Ej: Juan Pérez"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+            </div>
+
+            <!-- Campo Correo Electrónico -->
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico de Contacto</label>
+                <input type="email" id="email" required placeholder="tu.correo@ejemplo.com"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+            </div>
+
+            <!-- Campo Mensaje / PQRSS -->
+            <div>
+                <label for="mensaje" class="block text-sm font-medium text-gray-700 mb-1">Comentario PQRSS</label>
+                <textarea id="mensaje" rows="6" required placeholder="Describe aquí tu petición, queja o sugerencia..."
+                          class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 resize-y"></textarea>
+            </div>
+
+            <button type="submit" id="btn-enviar"
+                    class="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200">
+                Enviar Mensaje
+            </button>
+        </form>
+
+        <div id="mensaje-estado" class="mt-6 p-4 rounded-lg font-medium hidden text-left"></div>
+
+        <div class="mt-8 text-center">
+            <a href="index.html" class="text-sm text-blue-600 hover:text-blue-800 transition duration-150">Volver a la página principal</a>
+        </div>
+    </div>
+
+    <!-- Lógica de Firebase para guardar el PQRSS en Firestore -->
+    <script type="module">
+        // --- 1. IMPORTACIONES DE FIREBASE (Versión estable 11.6.1) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, setPersistence, browserSessionPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+
+        // --- 2. CONFIGURACIÓN FIREBASE (PEGA AQUÍ TUS CREDENCIALES) ---
+        const firebaseConfig = {
+           apiKey: "AIzaSyCTsVrJCtI1OCPPs6Y5FgpLa04dp1y0AzA",
+           authDomain: "controlinundacionesusers.firebaseapp.com",
+           projectId: "controlinundacionesusers",
+           storageBucket: "controlinundacionesusers.firebasestorage.app",
+           messagingSenderId: "293753111334",
+           appId: "1:293753111334:web:bb30c373a3a47b9df1b7e7",
+           measurementId: "G-Q1CLNGZCC2"
+        };
+
+        // Variables de entorno de Canvas
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Inicialización
+        let app, auth, db;
+        let userId = null; // Almacena el UID del usuario, sea autenticado o anónimo
+
+        // --- 3. INICIALIZACIÓN DE FIREBASE ---
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey.length > 5) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('Debug');
+                console.log("🟢 Firebase: Servicios inicializados (Auth y Firestore).");
+                authenticateUser();
+            } catch (initError) {
+                console.error("🔴 Firebase: Falló la inicialización de la app.", initError);
+                mostrarMensaje("Error de inicialización de Firebase. Revisa la consola.", 'bg-red-100 text-red-800 border-red-300');
+            }
+        } else {
+            console.error("🔴 Firebase: ¡ATENCIÓN! La clave API no es válida.");
+            mostrarMensaje("Configuración de Firebase incompleta. El envío no funcionará.", 'bg-red-100 text-red-800 border-red-300');
+        }
+
+        // --- 4. GESTIÓN DE AUTENTICACIÓN Y USUARIO ID ---
+
+        // Función de Autenticación del entorno
+        async function authenticateUser() {
+            try {
+                if (!auth) return;
+                await setPersistence(auth, browserSessionPersistence);
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("🔴 Firebase: Error en la autenticación inicial:", error);
+            }
+        }
+
+        // Listener para obtener el ID del usuario una vez autenticado (sea anónimo o con cuenta)
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    // Si el usuario existe, usa su UID (para usuarios logueados o anónimos)
+                    userId = user.uid;
+                    console.log(`✅ Auth State: Usuario ID establecido: ${userId}`);
+                } else {
+                    // Si no hay usuario, usamos un UUID aleatorio temporal, aunque signInAnonymously debería manejar esto.
+                    userId = crypto.randomUUID();
+                    console.log(`⚠️ Auth State: Usuario ID establecido como Random UUID: ${userId}`);
+                }
+            });
+        }
+
+
+        // --- 5. LÓGICA DE LA INTERFAZ Y ENVÍO ---
+
+        const formContacto = document.getElementById('form-contacto');
+        const mensajeDiv = document.getElementById('mensaje-estado');
+        const btnEnviar = document.getElementById('btn-enviar');
+
+        // Helper para mostrar mensajes de estado
+        function mostrarMensaje(texto, clases, ocultar = true) {
+            mensajeDiv.innerHTML = texto;
+            // Se usa setAttribute para reemplazar todas las clases, añadiendo 'border'
+            mensajeDiv.setAttribute('class', `mt-6 p-4 rounded-lg font-medium border ${clases}`);
+            mensajeDiv.classList.remove('hidden');
+            if (ocultar) {
+                setTimeout(() => {
+                    mensajeDiv.classList.add('hidden');
+                }, 8000); // El mensaje de éxito/error se oculta después de 8 segundos
+            }
+        }
+
+
+        async function handlePqrssSubmission(e) {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('nombre').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const mensaje = document.getElementById('mensaje').value.trim();
+
+            if (!db || !userId) {
+                mostrarMensaje("🔴 Error: El servicio de base de datos no está listo o el usuario no fue identificado.", 'bg-red-100 text-red-800 border-red-300', false);
+                return;
+            }
+
+            btnEnviar.disabled = true;
+            btnEnviar.textContent = 'Enviando...';
+            mostrarMensaje('Procesando tu solicitud...', 'bg-blue-100 text-blue-800 border-blue-300', false);
+
+            try {
+                // Definición de la ruta de la colección para los mensajes PQRSS (datos públicos)
+                const collectionPath = `artifacts/${appId}/public/data/pqrss_messages`;
+                
+                // Creación del documento de PQRSS
+                const pqrssData = {
+                    nombre: nombre,
+                    email: email,
+                    mensaje: mensaje,
+                    fecha: new Date().toISOString(),
+                    // Almacenamos el ID del usuario que envió el mensaje (sea anónimo o registrado)
+                    sentByUserId: userId, 
+                    estado: 'Pendiente' 
+                };
+
+                // Uso de addDoc para añadir un nuevo documento con ID autogenerado a la colección
+                await addDoc(collection(db, collectionPath), pqrssData);
+
+                // Éxito
+                mostrarMensaje('✅ ¡Mensaje PQRSS enviado con éxito! Nos comunicaremos pronto.', 'bg-green-100 text-green-800 border-green-300');
+                
+                // Limpiar el formulario y habilitar el botón
+                formContacto.reset();
+                btnEnviar.disabled = false;
+                btnEnviar.textContent = 'Enviar Mensaje';
+
+
+            } catch (error) {
+                console.error("🔴 Error al enviar PQRSS a Firestore:", error);
+                
+                let errorMessage = 'Error desconocido al guardar el mensaje. Revisa la consola y tus reglas de seguridad de Firestore.';
+                if (error.code === 'permission-denied') {
+                    errorMessage = 'Error de Permisos: Revisa las **Reglas de Seguridad** de tu Firestore. Debes permitir escritura en la colección `artifacts/{appId}/public/data/pqrss_messages`.';
+                }
+                
+                mostrarMensaje(`❌ Falló el envío: ${errorMessage}`, 'bg-red-100 text-red-800 border-red-300', false);
+                
+                btnEnviar.disabled = false;
+                btnEnviar.textContent = 'Enviar Mensaje';
+            }
+        }
+
+        formContacto.addEventListener('submit', handlePqrssSubmission);
+
+    </script>
+</body>
+</html>
