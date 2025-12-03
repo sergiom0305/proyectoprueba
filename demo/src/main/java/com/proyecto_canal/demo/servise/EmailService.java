@@ -68,4 +68,23 @@ public class EmailService {
         );
         sendEmail(to, subject, body);
     }
+
+        public void sendHighAlertEmail(String sensorId, Integer nivelCm) {
+        String subject = String.format("🚨 ALERTA CRÍTICA: Desbordamiento Potencial en Sensor %s", sensorId);
+        String body = String.format(
+            "¡ATENCIÓN ADMINISTRADOR!\n\n" +
+            "El sensor con ID: %s ha detectado un nivel de agua CRÍTICO.\n" +
+            "Nivel Registrado: %d cm.\n" +
+            "Tipo de Alerta: ALTA.\n\n" +
+            "Por favor, toma acción inmediata para verificar el estado del canal.\n" +
+            "Fecha y Hora de la Alerta: %s\n\n" +
+            "Sistema de Monitoreo GlobalTech",
+            sensorId,
+            nivelCm,
+            java.time.LocalDateTime.now()
+        );
+        
+        // El correo se envía al administrador
+        sendEmail(ADMIN_EMAIL, subject, body);
+    }
 }
