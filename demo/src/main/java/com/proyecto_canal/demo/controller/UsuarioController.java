@@ -79,14 +79,5 @@ public class UsuarioController {
         return ResponseEntity.notFound().build();
     }
 
-     @GetMapping("/register")
-    public String showRegistrationForm() {
-        return "registro"; 
-    }
-
-
-    @GetMapping("/login")
-    public String showLoginForm() {
-        return "login"; 
-    }
 }
+
